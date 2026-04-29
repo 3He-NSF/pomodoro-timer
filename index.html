@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pomelo Focus Timer</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-left" aria-hidden="true"></div>
+    <div class="ambient ambient-right" aria-hidden="true"></div>
+
+    <main class="app-shell">
+      <section id="settingsModal" class="settings-modal" aria-hidden="true">
+        <div id="settingsBackdrop" class="settings-backdrop"></div>
+        <div class="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+          <div class="settings-dialog-header">
+            <div class="settings-dialog-copy">
+              <h2 id="settingsTitle">時間設定</h2>
+              <p>必要な項目だけをまとめたシンプルな設定画面です。</p>
+            </div>
+            <button id="closeSettingsButton" class="icon-button" type="button" aria-label="設定を閉じる">
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+
+          <section class="settings-grid">
+            <article class="panel session-panel">
+              <div class="settings-section">
+                <div class="section-heading">
+                  <h3>プリセット</h3>
+                  <p>よく使う組み合わせだけ保存できます。</p>
+                </div>
+                <div class="preset-toolbar">
+                  <div class="preset-save-row">
+                    <input
+                      id="presetName"
+                      class="preset-name-input"
+                      type="text"
+                      maxlength="24"
+                      placeholder="プリセット名"
+                    />
+                    <button id="savePresetButton" class="secondary-button" type="button">保存</button>
+                  </div>
+                  <div id="presetList" class="preset-chip-list" aria-label="saved presets"></div>
+                </div>
+              </div>
+
+              <div class="settings-section">
+                <div class="section-heading">
+                  <h3>時間</h3>
+                  <p>作業と休憩の長さを設定します。</p>
+                </div>
+                <div class="simple-settings-list">
+                  <label class="simple-setting-row">
+                    <span class="simple-setting-label">作業</span>
+                    <div class="time-input-group time-grid-group">
+                      <div class="time-field">
+                        <span class="time-field-label">分</span>
+                        <input id="focusMinutes" type="number" min="0" max="99" step="1" value="25" />
+                      </div>
+                      <div class="time-field">
+                        <span class="time-field-label">秒</span>
+                        <input id="focusSeconds" type="number" min="0" max="59" step="1" value="0" />
+                      </div>
+                    </div>
+                  </label>
+                  <label class="simple-setting-row">
+                    <span class="simple-setting-label">短い休憩</span>
+                    <div class="time-input-group time-grid-group">
+                      <div class="time-field">
+                        <span class="time-field-label">分</span>
+                        <input id="shortBreakMinutes" type="number" min="0" max="59" step="1" value="5" />
+                      </div>
+                      <div class="time-field">
+                        <span class="time-field-label">秒</span>
+                        <input id="shortBreakSeconds" type="number" min="0" max="59" step="1" value="0" />
+                      </div>
+                    </div>
+                  </label>
+                  <label class="simple-setting-row">
+                    <span class="simple-setting-label">長い休憩</span>
+                    <div class="time-input-group time-grid-group">
+                      <div class="time-field">
+                        <span class="time-field-label">分</span>
+                        <input id="longBreakMinutes" type="number" min="0" max="99" step="1" value="15" />
+                      </div>
+                      <div class="time-field">
+                        <span class="time-field-label">秒</span>
+                        <input id="longBreakSeconds" type="number" min="0" max="59" step="1" value="0" />
+                      </div>
+                    </div>
+                  </label>
+                  <label class="simple-setting-row simple-setting-row-cycle">
+                    <span class="simple-setting-label">長休憩の間隔</span>
+                    <div class="cycle-box cycle-grid-box">
+                      <input id="cyclesUntilLongBreak" type="number" min="2" max="8" step="1" value="4" />
+                      <span>回ごと</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="settings-section">
+                <div class="section-heading">
+                  <h3>オプション</h3>
+                  <p>自動開始と通知の挙動です。</p>
+                </div>
+
+                <div class="toggle-list">
+                  <label class="toggle-item">
+                    <span>
+                      <strong>休憩を自動開始</strong>
+                      <small>作業後にそのまま休憩へ移ります。</small>
+                    </span>
+                    <input id="autoStartBreaks" type="checkbox" />
+                  </label>
+                  <label class="toggle-item">
+                    <span>
+                      <strong>次の作業を自動開始</strong>
+                      <small>休憩後に次の集中を始めます。</small>
+                    </span>
+                    <input id="autoStartFocus" type="checkbox" />
+                  </label>
+                  <label class="toggle-item">
+                    <span>
+                      <strong>通知音</strong>
+                      <small>終了前と終了時に音を鳴らします。</small>
+                    </span>
+                    <input id="soundEnabled" type="checkbox" checked />
+                  </label>
+                </div>
+
+                <label class="setting-item volume-setting">
+                  <span>通知音の大きさ <strong id="soundVolumeValue">70%</strong></span>
+                  <input id="soundVolume" type="range" min="0" max="100" step="1" value="70" />
+                </label>
+              </div>
+
+              <div class="settings-actions">
+                <p id="statusMessage" class="status-message">準備完了。最初の集中を始められます。</p>
+                <button id="saveSettingsButton" class="primary-button" type="button">保存する</button>
+              </div>
+            </article>
+          </section>
+        </div>
+      </section>
+
+      <section class="timer-shell">
+        <div class="timer-panel">
+          <div class="timer-panel-header">
+            <span class="timer-panel-kicker">Timer</span>
+            <button id="openSettingsButton" class="icon-button settings-trigger" type="button" aria-label="設定を開く">
+              <span aria-hidden="true">⚙</span>
+            </button>
+          </div>
+          <div class="mode-tabs" role="tablist" aria-label="Timer mode">
+            <button class="mode-tab is-active" data-mode="focus" role="tab" aria-selected="true">
+              Focus
+            </button>
+            <button class="mode-tab" data-mode="shortBreak" role="tab" aria-selected="false">
+              Short
+            </button>
+            <button class="mode-tab" data-mode="longBreak" role="tab" aria-selected="false">
+              Long
+            </button>
+          </div>
+
+          <div class="timer-stage">
+            <div class="timer-ring">
+              <svg viewBox="0 0 240 240" class="progress-svg" aria-hidden="true">
+                <circle class="ring-track" cx="120" cy="120" r="96"></circle>
+                <circle class="ring-progress" cx="120" cy="120" r="96"></circle>
+              </svg>
+              <div class="timer-readout">
+                <p id="modeLabel" class="mode-label">Focus Session</p>
+                <p id="timeDisplay" class="time-display" aria-live="polite">25:00</p>
+                <p id="cycleLabel" class="cycle-label">Cycle 1 / 4</p>
+              </div>
+            </div>
+
+            <div class="quick-stats">
+              <article class="stat-card">
+                <span class="stat-label">Today</span>
+                <strong id="completedCount">0</strong>
+                <span class="stat-meta">completed focus blocks</span>
+              </article>
+              <article class="stat-card">
+                <span class="stat-label">Next long break</span>
+                <strong id="longBreakCountdown">4</strong>
+                <span class="stat-meta">focus blocks remaining</span>
+              </article>
+            </div>
+          </div>
+
+          <div class="controls">
+            <button id="startPauseButton" class="primary-button">Start</button>
+            <button id="resetButton" class="secondary-button">Reset</button>
+            <button id="skipButton" class="ghost-button">Skip</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
