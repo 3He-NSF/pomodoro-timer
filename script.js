@@ -177,7 +177,6 @@ function render() {
     button.classList.toggle('is-active', selected)
     button.setAttribute('aria-selected', selected ? 'true' : 'false')
   })
-  updateProgress()
   updateStats()
 }
 
@@ -291,6 +290,7 @@ function playCompletionChime() {
 function handleTimerCompletion() {
   stopTimer()
   state.remainingSeconds = 0
+  updateProgress()
   render()
 
   if (state.settings.soundEnabled) {
@@ -307,6 +307,7 @@ function applyMode(mode, shouldRender = true) {
   state.mode = mode
   state.totalSeconds = state.settings.durations[mode]
   state.remainingSeconds = state.totalSeconds
+  updateProgress()
   if (shouldRender) render()
   saveState()
 }
@@ -396,6 +397,7 @@ function pauseTimer() {
   }
   stopTimer()
   elements.statusMessage.textContent = 'タイマーを一時停止しました。'
+  updateProgress()
   render()
 }
 
@@ -520,6 +522,7 @@ function saveSettings() {
   state.remainingSeconds = Math.max(0, Math.round(state.totalSeconds * currentSnapshot.remainingRatio))
 
   syncInputs()
+  updateProgress()
   render()
   saveState()
   elements.statusMessage.textContent = '設定を保存しました。現在のセッションにも比率を保って反映しました。'
