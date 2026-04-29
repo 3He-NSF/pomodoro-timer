@@ -205,7 +205,7 @@ h2,
   stroke-linecap: round;
   stroke-dasharray: var(--ring-offset);
   stroke-dashoffset: 0;
-  transition: stroke-dashoffset 900ms linear, stroke 220ms ease;
+  transition: stroke 220ms ease;
 }
 
 .timer-readout {

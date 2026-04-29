@@ -30,7 +30,10 @@ const state = {
   remainingSeconds: DEFAULTS.durations.focus,
   totalSeconds: DEFAULTS.durations.focus,
   intervalId: null,
+  animationFrameId: null,
+  endTimeMs: null,
   completionTimeoutId: null,
+  lastAnnouncedSecond: null,
   settings: structuredClone(DEFAULTS),
 }
 
@@ -148,8 +151,8 @@ function formatTime(totalSeconds) {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
-function updateProgress() {
-  const ratio = state.totalSeconds === 0 ? 0 : state.remainingSeconds / state.totalSeconds
+function updateProgress(remainingSeconds = state.remainingSeconds) {
+  const ratio = state.totalSeconds === 0 ? 0 : remainingSeconds / state.totalSeconds
   const offset = RING_LENGTH * (1 - ratio)
   elements.progressRing.style.strokeDashoffset = String(offset)
 }
@@ -217,10 +220,16 @@ function stopTimer() {
     clearInterval(state.intervalId)
     state.intervalId = null
   }
+  if (state.animationFrameId) {
+    cancelAnimationFrame(state.animationFrameId)
+    state.animationFrameId = null
+  }
   if (state.completionTimeoutId) {
     clearTimeout(state.completionTimeoutId)
     state.completionTimeoutId = null
   }
+  state.endTimeMs = null
+  state.lastAnnouncedSecond = null
   state.isRunning = false
 }
 
@@ -281,6 +290,7 @@ function playCompletionChime() {
 
 function handleTimerCompletion() {
   stopTimer()
+  state.remainingSeconds = 0
   render()
 
   if (state.settings.soundEnabled) {
@@ -340,31 +350,50 @@ function advanceMode(countFocusCompletion = true) {
 }
 
 function tick() {
-  if (state.remainingSeconds > 0) {
-    state.remainingSeconds -= 1
+  if (!state.isRunning || state.endTimeMs === null) return
+
+  const remainingMs = Math.max(0, state.endTimeMs - performance.now())
+  const preciseRemainingSeconds = remainingMs / 1000
+  const wholeRemainingSeconds = Math.ceil(preciseRemainingSeconds)
+
+  updateProgress(preciseRemainingSeconds)
+
+  if (wholeRemainingSeconds !== state.remainingSeconds) {
+    state.remainingSeconds = wholeRemainingSeconds
     render()
 
-    if (state.settings.soundEnabled && (state.remainingSeconds === 2 || state.remainingSeconds === 1)) {
+    if (
+      state.settings.soundEnabled &&
+      (wholeRemainingSeconds === 2 || wholeRemainingSeconds === 1) &&
+      state.lastAnnouncedSecond !== wholeRemainingSeconds
+    ) {
+      state.lastAnnouncedSecond = wholeRemainingSeconds
       playCountdownChime()
     }
+  }
 
-    if (state.remainingSeconds === 0) {
-      handleTimerCompletion()
-    }
-
+  if (remainingMs === 0) {
+    handleTimerCompletion()
     return
   }
+
+  state.animationFrameId = requestAnimationFrame(tick)
 }
 
 function startTimer() {
   if (state.isRunning) return
   state.isRunning = true
+  state.endTimeMs = performance.now() + state.remainingSeconds * 1000
+  state.lastAnnouncedSecond = null
   elements.statusMessage.textContent = `${MODES[state.mode].label} を開始しました。`
-  state.intervalId = window.setInterval(tick, 1000)
   render()
+  state.animationFrameId = requestAnimationFrame(tick)
 }
 
 function pauseTimer() {
+  if (state.isRunning && state.endTimeMs !== null) {
+    state.remainingSeconds = Math.max(0, Math.ceil((state.endTimeMs - performance.now()) / 1000))
+  }
   stopTimer()
   elements.statusMessage.textContent = 'タイマーを一時停止しました。'
   render()
@@ -478,7 +507,8 @@ function readDurationInput(minutesValue, secondsValue, maxMinutes, fallback) {
 function saveSettings() {
   const currentSnapshot = {
     mode: state.mode,
-    remainingRatio: state.totalSeconds === 0 ? 1 : state.remainingSeconds / state.totalSeconds,
+    remainingRatio:
+      state.totalSeconds === 0 ? 1 : getCurrentRemainingSeconds() / state.totalSeconds,
   }
 
   state.settings = {
@@ -493,6 +523,14 @@ function saveSettings() {
   render()
   saveState()
   elements.statusMessage.textContent = '設定を保存しました。現在のセッションにも比率を保って反映しました。'
+}
+
+function getCurrentRemainingSeconds() {
+  if (!state.isRunning || state.endTimeMs === null) {
+    return state.remainingSeconds
+  }
+
+  return Math.max(0, (state.endTimeMs - performance.now()) / 1000)
 }
 
 function bindEvents() {
